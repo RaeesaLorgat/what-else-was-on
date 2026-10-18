@@ -1,0 +1,6 @@
+openai>=1.60
+python-dotenv>=1.0
+numpy>=1.26
+pytest>=8.0
+# Agents (used from Day 4); comment out if install is slow today
+agent-framework
