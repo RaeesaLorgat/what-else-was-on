@@ -19,7 +19,19 @@ Built for the Microsoft x Premier League **Inside the Game: Developer Hackathon*
 
 ## Status
 
-Day 1: project setup and a connection check to a model deployed in Microsoft Foundry.
+- Day 1: project setup and a connection check to a model deployed in Microsoft Foundry.
+- Days 2-3: synthetic match generator. A full 90-minute match (22 players and the ball at 10 frames per second, plus about 1,600 passes, shots, tackles, fouls and interceptions) takes about 40 seconds to generate.
+
+## The synthetic match generator
+
+```bash
+python scripts/generate_match.py --seed 1          # full match, about 40 s
+python scripts/preview_match.py --seed 1 --minute 20
+```
+
+This writes `data/match_1_tracking.npz` (positions), `data/match_1_events.json` (teams, players, events, summary) and `data/match_1_preview.png` (a picture to check it looks like football). The same seed always gives the same match.
+
+How it works, in short: both teams keep a formation that slides with the ball; the defending team presses the ball carrier with its nearest player and covers with the next; attackers make runs in behind. The ball carrier dribbles, then shoots or passes. Passes are chosen mostly among teammates the carrier can see, and players are a little cautious, so better options are sometimes skipped. Passes roll along the ground and can be cut out by a defender who reaches the ball's path first. All team and player names are made up.
 
 ## Quick start
 
