@@ -16,7 +16,7 @@ from agent_framework import Agent, tool
 from agent_framework.openai import OpenAIChatCompletionClient
 
 from .llm import load_settings
-from .tools import Match, analyse_pass, find_missed_passes, pass_arrival
+from .tools import Match, analyse_pass, find_missed_passes, offside_check, pass_arrival
 
 ANALYST_INSTRUCTIONS = """You are a football performance analyst for a TV broadcast.
 You review one pass at a time and answer: was something better on?
@@ -24,8 +24,9 @@ You review one pass at a time and answer: was something better on?
 How to work:
 1. Always call analyse_pass for the pass you are given. Never guess numbers.
 2. A "better option" is defined by the tool (field better_option): a teammate in the passer's
-   120 degree vision cone, at least 1 percentage point more threat than the pass played,
+   120 degree vision cone, not offside, at least 0.5 percentage points more threat than the pass played,
    and a pass that would arrive before any defender. Use that definition; do not invent your own.
+   xp_pct is the chance that pass would be completed; mention it in the explanation.
 3. If there is a better option, you may call check_pass_arrival for it to describe how close the nearest defender was.
 4. Use ONLY numbers that appear in tool results, copied exactly. Round nothing.
 
@@ -42,7 +43,9 @@ Reply with ONLY a JSON object, no other text, in this shape:
     "better_option_threat_pct": <number or null>,
     "gain_pct": <number or null>,
     "better_option_in_view": <true/false/null>,
+    "better_option_offside": <true/false/null>,
     "better_option_arrives": <true/false/null>,
+    "better_option_xp_pct": <number or null>,
     "closest_call_s": <number or null>
   },
   "explanation": "<two short sentences a TV analyst could say, no jargon>"
@@ -69,12 +72,17 @@ def make_tools(m: Match) -> list:
                            teammate: Annotated[int, "player id of the teammate"]) -> str:
         return json.dumps(pass_arrival(m, pass_id, teammate))
 
+    @tool(name="check_offside", description="Was this teammate (player id) offside at the moment of the pass?")
+    def check_offside(pass_id: Annotated[int, "id of the pass event"],
+                      teammate: Annotated[int, "player id of the teammate"]) -> str:
+        return json.dumps(offside_check(m, pass_id, teammate))
+
     @tool(name="list_missed_passes", description="Passes in this match where a better visible option was on, "
                                                  "biggest threat gain first.")
     def list_missed_passes(limit: Annotated[int, "how many to return"] = 5) -> str:
         return json.dumps(find_missed_passes(m, limit=limit))
 
-    return [analyse_pass_tool, check_pass_arrival, list_missed_passes]
+    return [analyse_pass_tool, check_pass_arrival, check_offside, list_missed_passes]
 
 
 def make_analyst(m: Match, client=None) -> Agent:

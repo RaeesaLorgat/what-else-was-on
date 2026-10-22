@@ -21,19 +21,26 @@ Built for the Microsoft x Premier League **Inside the Game: Developer Hackathon*
 
 - Day 1: project setup and a connection check to a model deployed in Microsoft Foundry.
 - Days 2-3: synthetic match generator. A full 90-minute match (22 players and the ball at 10 frames per second, plus about 1,600 passes, shots, tackles, fouls and interceptions) takes about 40 seconds to generate.
-
 - Day 4: football tools the agents call: vision cone, option value (threat), pass arrival, and `analyse_pass` / `find_missed_passes`.
 - Day 5: the Analyst agent (Microsoft Agent Framework on a Foundry model) that calls those tools and returns an evidence-backed verdict as JSON.
+- Day 5b: offside (in the generator and the tools) and a completion probability (xP) for every option.
+- Day 5c: passes are judged with Karun Singh's public expected threat (xT) grid, downloaded separately.
 
 ## Football tools and the Analyst agent
 
 ```bash
+python scripts/get_xt_grid.py                           # once: download Karun Singh's xT grid
 python scripts/explain_pass.py --seed 1                 # biggest missed options in the match (no AI)
-python scripts/explain_pass.py --seed 1 --pass 1447     # full table for one pass
-python scripts/run_analyst.py --seed 1 --pass 1447      # the Analyst agent on the same pass
+python scripts/explain_pass.py --seed 1 --pass 797      # full table for one pass
+python scripts/run_analyst.py --seed 1 --pass 797       # the Analyst agent on the same pass
 ```
 
-A "better option" is a teammate inside the passer's 120 degree vision cone, worth at least 1 percentage point more threat than the pass played, and reachable: a ground pass at 12.5 m/s gets there before any defender who reacts after 0.7 s and sprints at 7 m/s.
+A "better option" is a teammate inside the passer's 120 degree vision cone, not offside, worth at least 0.5 percentage points more threat than the pass played, and reachable: a ground pass at 12.5 m/s gets there before any defender who reacts after 0.7 s and sprints at 7 m/s.
+
+What the numbers mean:
+- **Threat** is expected threat (xT): the chance a move ends in a goal soon if the ball is at that spot. The tools use [Karun Singh's public 12 x 8 xT grid](https://karun.in/blog/expected-threat.html), learned from a season of Premier League event data, with bilinear interpolation between cells. The grid is Karun Singh's work and is not included in this repo; download it once with `python scripts/get_xt_grid.py`. Without it, the tools fall back to a hand-made xT-style map. The match generator always uses the hand-made map to decide where its players pass, so the judge (Karun's grid) is independent of the rule the simulated players follow.
+- **xP** is the chance a pass is completed, from how much time the ball has to spare over the quickest defender. It is a logistic curve fitted on 4,851 passes from synthetic matches 1-3 (`scripts/fit_xp.py`, AUC 0.69).
+- **Offside**: the receiver is in the opponents' half, ahead of the ball and ahead of the second-last opponent at the moment of the pass.
 
 ## The synthetic match generator
 
@@ -65,7 +72,7 @@ See [docs/SETUP.md](docs/SETUP.md) for the Azure and Foundry steps.
 
 ## Data
 
-Every match in this project is synthetic. No real match footage or match data is used or included.
+Every match in this project is synthetic. No real match footage or match data is used or included. The only outside input is Karun Singh's public xT grid (a table of 96 numbers), which is downloaded from his site rather than stored here, and credited above.
 
 ## Licence
 

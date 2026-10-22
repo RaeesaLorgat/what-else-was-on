@@ -41,7 +41,7 @@ def test_events_look_like_football(sim):
     c = Counter(e.type for e in sim.events)
     assert c["pass"] > 50
     passes = [e for e in sim.events if e.type == "pass"]
-    assert all(e.outcome in ("complete", "intercepted", "out", "stopped") for e in passes[:-1])
+    assert all(e.outcome in ("complete", "intercepted", "out", "offside", "stopped") for e in passes[:-1])
     completion = sum(e.outcome == "complete" for e in passes) / len(passes)
     assert 0.65 < completion < 0.95
     # passes go from a player to a teammate

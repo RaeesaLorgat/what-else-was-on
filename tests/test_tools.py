@@ -52,7 +52,8 @@ def test_analyse_pass_is_consistent(match):
         json.dumps(a)                                  # the agent gets this as JSON
         for o in a["options"]:
             if o["better_option"]:
-                assert o["in_view"] and o["arrives"] and o["gain_vs_pass_played_pct"] >= 1.0
+                assert o["in_view"] and o["arrives"] and not o["offside"] and o["gain_vs_pass_played_pct"] >= 100 * tools.BETTER_GAIN
+            assert 0 <= o["xp_pct"] <= 100
         assert a["missed_better_option"] == any(o["better_option"] for o in a["options"])
         found += a["missed_better_option"]
     assert found > 0
@@ -70,3 +71,17 @@ def test_bad_inputs(match):
     p = match.passes[0]
     with pytest.raises(ValueError):
         pass_arrival(match, p["id"], p["player"])
+
+
+def test_offside_rule():
+    from whatelse.generator import is_offside
+    defenders = np.array([[100, 34], [80, 30], [78, 40]])      # keeper at 100, second-last defender at 80
+    ball = np.array([60, 34])
+    assert is_offside(True, np.array([85, 34]), ball, defenders)        # beyond the second-last defender
+    assert not is_offside(True, np.array([79, 34]), ball, defenders)    # level-ish but behind him
+    assert not is_offside(True, np.array([45, 34]), np.array([40, 34]), np.array([[100, 34], [44, 30]]))  # own half
+
+
+def test_xp_rises_with_margin():
+    assert tools.completion_probability(-1.0) < tools.completion_probability(0.0) < tools.completion_probability(0.5)
+    assert 0.6 < tools.completion_probability(0.0) < 0.8

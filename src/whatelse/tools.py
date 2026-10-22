@@ -3,9 +3,11 @@
 Each tool looks at one pass in a generated match and answers one question:
 
 - vision_cone:   which teammates could the passer see?
-- option_value:  how dangerous would the ball be at each teammate, compared
+- option_value:  how dangerous (expected threat, see xt.py) would the ball be at each teammate, compared
                  with where the pass actually went?
-- pass_arrival:  would a pass to a teammate get there before a defender?
+- pass_arrival:  would a pass to a teammate get there before a defender, and how
+                 likely is it to be completed (xP)?
+- offside_check: was the teammate offside at the moment of the pass?
 - analyse_pass:  all three together, plus the verdict "was something better on?"
 - find_missed_passes: the passes in a match where the best visible option was
                  clearly better than the pass played, and would have arrived.
@@ -22,14 +24,20 @@ from pathlib import Path
 
 import numpy as np
 
-from .generator import load_match, threat, PITCH_X, PITCH_Y, HZ
+from .generator import load_match, is_offside, PITCH_X, PITCH_Y, HZ
+from .xt import xt as threat, model_name as threat_model
 
 CONE_HALF_ANGLE = 60.0     # degrees either side: a 120 degree vision cone
 FACING_WINDOW = 0.5        # seconds of movement used to decide where the passer faces
 BALL_SPEED = 12.5          # m/s, a typical ground pass
 REACT = 0.7                # s, reaction time before a defender changes direction
 VMAX = 7.0                 # m/s, top speed when chasing the ball
-BETTER_GAIN = 0.01         # a better option must add at least 1 percentage point of threat
+BETTER_GAIN = 0.005        # a better option must add at least 0.5 percentage points of threat (xT)
+# on Karun Singh's grid, one zone forward in midfield adds about 0.2-0.5 points, so 0.5 means a clear step up;
+# it flags about 1 pass in 10, close to the share flagged with the hand-made map at 1 point
+# completion probability (xP) from the arrival margin: fitted by logistic regression on
+# 4,851 passes from synthetic matches 1-3 (scripts/fit_xp.py); AUC 0.69
+XP_INTERCEPT, XP_SLOPE = 0.979, 1.468
 MIN_DIST, MAX_DIST = 4.0, 45.0   # passes shorter or longer than this are not considered
 
 
@@ -120,6 +128,27 @@ def lead_aim(m: Match, passer: int, target: int, frame: int) -> np.ndarray:
     return np.clip(aim, [0.5, 0.5], [PITCH_X - 0.5, PITCH_Y - 0.5])
 
 
+def completion_probability(closest_call_s: float) -> float:
+    """xP: chance the pass is completed, from how much time the ball has to spare over the quickest defender."""
+    m = max(-2.0, min(2.0, closest_call_s))
+    return 1.0 / (1.0 + math.exp(-(XP_INTERCEPT + XP_SLOPE * m)))
+
+
+# ---------- offside ----------
+def offside(m: Match, passer: int, target: int, frame: int) -> bool:
+    team = m.team_of(passer)
+    opp = [p["pid"] for p in m.players if p["team"] != team]
+    P = m.pos(frame)
+    return is_offside(m.attacks_right(team), P[target], m.ball[min(frame, len(m.ball) - 1)], P[opp])
+
+
+def offside_check(m: Match, pass_id: int, teammate: int) -> dict:
+    e = m.event(pass_id)
+    off = offside(m, e["player"], teammate, e["frame"])
+    return {"pass_id": pass_id, "teammate": m.label(teammate), "offside": off,
+            "rule": "offside if in the opponents' half, ahead of the ball and ahead of the second-last opponent"}
+
+
 # ---------- option value ----------
 def option_value(m: Match, pass_id: int) -> dict:
     e = m.event(pass_id)
@@ -137,6 +166,7 @@ def option_value(m: Match, pass_id: int) -> dict:
         out.append({"player": j, "label": m.label(j), "threat_pct": round(100 * val, 1),
                     "gain_vs_pass_played_pct": round(100 * (val - played), 1)})
     return {"pass_id": pass_id, "threat_of_pass_played_pct": round(100 * played, 1),
+            "threat_model": threat_model(),
             "note": "threat = chance the move ends in a goal soon if the ball is at that spot", "options": out}
 
 
@@ -166,7 +196,8 @@ def arrival(m: Match, passer: int, target: int, frame: int) -> dict:
             cut = (int(opp[k]), float(s))
     spare, who, where = worst if worst else (99.0, None, 0.0)
     res = {"arrives": cut is None, "ball_time_s": round(L / BALL_SPEED, 2),
-           "closest_call_s": round(spare, 2), "closest_defender": m.label(who) if who is not None else None}
+           "closest_call_s": round(spare, 2), "closest_defender": m.label(who) if who is not None else None,
+           "xp_pct": round(100 * completion_probability(spare))}
     if cut:
         res.update({"cut_out_by": m.label(cut[0]), "cut_out_after_m": round(cut[1])})
     res["close_call"] = abs(spare) < 0.3
@@ -198,12 +229,13 @@ def analyse_pass(m: Match, pass_id: int) -> dict:
         if not (MIN_DIST <= c["distance_m"] <= MAX_DIST):
             continue
         a = arrival(m, i, j, f)
-        better = (c["in_view"] and o["gain_vs_pass_played_pct"] >= 100 * BETTER_GAIN and a["arrives"]
+        off = offside(m, i, j, f)
+        better = (c["in_view"] and not off and o["gain_vs_pass_played_pct"] >= 100 * BETTER_GAIN and a["arrives"]
                   and j != played_target)
-        options.append({"player": j, "label": o["label"], "in_view": c["in_view"],
+        options.append({"player": j, "label": o["label"], "in_view": c["in_view"], "offside": off,
                         "distance_m": c["distance_m"], "threat_pct": o["threat_pct"],
                         "gain_vs_pass_played_pct": o["gain_vs_pass_played_pct"],
-                        "arrives": a["arrives"], "closest_call_s": a["closest_call_s"],
+                        "arrives": a["arrives"], "xp_pct": a["xp_pct"], "closest_call_s": a["closest_call_s"],
                         "close_call": a["close_call"],
                         "cut_out_by": a.get("cut_out_by"), "better_option": better,
                         "was_pass_played": j == played_target})
@@ -217,11 +249,12 @@ def analyse_pass(m: Match, pass_id: int) -> dict:
         "pass_outcome": e["outcome"],
         "pass_played_in_view": bool(e["extra"].get("in_view")),
         "threat_of_pass_played_pct": vals["threat_of_pass_played_pct"],
+        "threat_model": vals["threat_model"],
         "missed_better_option": bool(better),
         "best_better_option": better[0]["label"] if better else None,
         "options": options,
-        "rule": "better option = teammate in the 120 degree cone, at least 1 point more threat than the pass played, "
-                "and the pass would arrive before any defender",
+        "rule": "better option = teammate in the 120 degree cone, not offside, at least 0.5 points more threat than "
+                "the pass played, and the pass would arrive before any defender",
     }
 
 
@@ -236,6 +269,6 @@ def find_missed_passes(m: Match, limit: int = 10, team: int | None = None) -> li
             best = next(o for o in a["options"] if o["better_option"])
             out.append({"pass_id": e["id"], "time": a["time"], "team": a["team"], "passer": a["passer"],
                         "pass_played_to": a["pass_played_to"], "better_option": best["label"],
-                        "gain_pct": best["gain_vs_pass_played_pct"]})
+                        "gain_pct": best["gain_vs_pass_played_pct"], "xp_pct": best["xp_pct"]})
     out.sort(key=lambda r: -r["gain_pct"])
     return out[:limit]
