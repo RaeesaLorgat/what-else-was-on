@@ -22,6 +22,19 @@ Built for the Microsoft x Premier League **Inside the Game: Developer Hackathon*
 - Day 1: project setup and a connection check to a model deployed in Microsoft Foundry.
 - Days 2-3: synthetic match generator. A full 90-minute match (22 players and the ball at 10 frames per second, plus about 1,600 passes, shots, tackles, fouls and interceptions) takes about 40 seconds to generate.
 
+- Day 4: football tools the agents call: vision cone, option value (threat), pass arrival, and `analyse_pass` / `find_missed_passes`.
+- Day 5: the Analyst agent (Microsoft Agent Framework on a Foundry model) that calls those tools and returns an evidence-backed verdict as JSON.
+
+## Football tools and the Analyst agent
+
+```bash
+python scripts/explain_pass.py --seed 1                 # biggest missed options in the match (no AI)
+python scripts/explain_pass.py --seed 1 --pass 1447     # full table for one pass
+python scripts/run_analyst.py --seed 1 --pass 1447      # the Analyst agent on the same pass
+```
+
+A "better option" is a teammate inside the passer's 120 degree vision cone, worth at least 1 percentage point more threat than the pass played, and reachable: a ground pass at 12.5 m/s gets there before any defender who reacts after 0.7 s and sprints at 7 m/s.
+
 ## The synthetic match generator
 
 ```bash
