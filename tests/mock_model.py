@@ -56,7 +56,9 @@ class _Handler(BaseHTTPRequestHandler):
                              "better_option_threat_pct": best["threat_pct"] if best else None,
                              "gain_pct": best["gain_vs_pass_played_pct"] if best else None,
                              "better_option_in_view": best["in_view"] if best else None,
+                             "better_option_offside": best["offside"] if best else None,
                              "better_option_arrives": best["arrives"] if best else None,
+                             "better_option_xp_pct": best["xp_pct"] if best else None,
                              "closest_call_s": best["closest_call_s"] if best else None},
                 "explanation": "Mock explanation.",
             }

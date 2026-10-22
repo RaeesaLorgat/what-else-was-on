@@ -65,6 +65,16 @@ def threat(x: float, y: float, attack_right: bool) -> float:
     return 0.002 + 0.35 * math.exp(-d / 11.0)
 
 
+def is_offside(attack_right: bool, receiver: np.ndarray, ball: np.ndarray, opponents: np.ndarray) -> bool:
+    """Offside at the moment of the pass: the receiver is in the opponents' half, ahead of the ball,
+    and ahead of the second-last opponent (the goalkeeper usually being the last)."""
+    sgn = 1.0 if attack_right else -1.0
+    rx = sgn * float(receiver[0])
+    ahead = sorted((sgn * float(o[0]) for o in opponents), reverse=True)
+    second_last = ahead[1] if len(ahead) > 1 else -1e9
+    return rx > sgn * PITCH_X / 2 and rx > sgn * float(ball[0]) and rx > second_last
+
+
 @dataclass
 class Player:
     pid: int
@@ -80,7 +90,7 @@ class Event:
     id: int
     t: float            # seconds from kick-off
     frame: int
-    type: str           # pass, reception, interception, tackle, foul, pressure, shot, goal, out
+    type: str           # pass, reception, interception, tackle, foul, offside, pressure, shot, goal, out
     team: int
     player: int
     x: float
@@ -88,7 +98,7 @@ class Event:
     end_x: float | None = None
     end_y: float | None = None
     target: int | None = None     # intended receiver (passes)
-    outcome: str | None = None    # complete / intercepted / out / stopped (passes); goal / saved / missed (shots)
+    outcome: str | None = None    # complete / intercepted / out / offside / stopped (passes); goal / saved / missed (shots)
     extra: dict = field(default_factory=dict)
 
 
@@ -357,18 +367,30 @@ class MatchSim:
             margin = self._arrival_margin(self.pos[i], aim, speed, team)
             gain = self.threat_at(aim, team) - here
             seen = self.in_view(i, self.pos[j]) or (t - self.last_seen[i, j] < 2.0)
-            options.append((j, aim, speed, margin, gain, seen))
+            off = is_offside(self.attack_right(team), self.pos[j], self.pos[i], self.pos[self.team_ids(1 - team)])
+            options.append((j, aim, speed, margin, gain, seen, off))
         if not options:
             self.hold = 0.5
             return
         # players are cautious: safety counts for more than threat, and they
         # rarely pass to someone they have not seen; this leaves better options unused
-        score = np.array([3.5 * np.tanh(m / 0.6) + 25.0 * g + (0.0 if s else -5.0) for (_, _, _, m, g, s) in options])
+        # players also try not to pass to a teammate standing offside, but sometimes do
+        score = np.array([3.5 * np.tanh(m / 0.6) + 25.0 * g + (0.0 if s else -5.0) + (-6.0 if o else 0.0)
+                          for (_, _, _, m, g, s, o) in options])
         prob = np.exp(score - score.max())
         prob /= prob.sum()
         k = int(self.rng.choice(len(options), p=prob))
-        j, aim, speed, margin, gain, seen = options[k]
+        j, aim, speed, margin, gain, seen, off = options[k]
         aim = aim + self.rng.normal(0, 0.5, 2)                 # passes are not perfect
+        if off:
+            # the flag goes up: free kick to the defending team
+            self._log(f, "pass", team, i, *self.pos[i], end_x=float(aim[0]), end_y=float(aim[1]), target=int(j),
+                      outcome="offside", extra={"in_view": bool(self.in_view(i, self.pos[j])), "speed": round(speed, 1)})
+            self._log(f, "offside", team, j, *self.pos[j])
+            opp = self.team_ids(1 - team)
+            nearest = int(opp[int(np.argmin(np.hypot(*(self.pos[opp] - self.pos[j]).T)))])
+            self._restart(f, nearest, delay=float(self.rng.uniform(10, 20)))
+            return
         self.flight = {"from": self.pos[i].copy(), "aim": aim, "speed": speed, "target": int(j),
                        "passer": int(i), "event": len(self.events)}
         self._log(f, "pass", team, i, *self.pos[i], end_x=float(aim[0]), end_y=float(aim[1]), target=int(j),
@@ -489,6 +511,7 @@ class MatchSim:
             "shots": sum(1 for e in self.events if e.type == "shot"),
             "tackles": sum(1 for e in self.events if e.type == "tackle"),
             "interceptions": sum(1 for e in self.events if e.type == "interception"),
+            "offsides": sum(1 for e in self.events if e.type == "offside"),
             "possession_team0": round(float(np.mean(self.possession_track == 0)), 3),
         }
 

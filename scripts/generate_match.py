@@ -35,7 +35,7 @@ def main() -> None:
     print(f"Done in {time.time() - t0:.0f} s. Saved {path} and its tracking file.")
     print(f"Score {s['score'][0]}-{s['score'][1]} | passes {s['passes']} ({100 * s['pass_completion']:.0f}% complete) | "
           f"blind passes {s['blind_passes']} | shots {s['shots']} | tackles {s['tackles']} | "
-          f"interceptions {s['interceptions']} | team 0 possession {100 * s['possession_team0']:.0f}%")
+          f"interceptions {s['interceptions']} | offsides {s['offsides']} | team 0 possession {100 * s['possession_team0']:.0f}%")
 
 
 if __name__ == "__main__":
