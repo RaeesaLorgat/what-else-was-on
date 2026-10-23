@@ -142,6 +142,29 @@ def offside(m: Match, passer: int, target: int, frame: int) -> bool:
     return is_offside(m.attacks_right(team), P[target], m.ball[min(frame, len(m.ball) - 1)], P[opp])
 
 
+def resolve_teammate(m: Match, pass_id: int, ref) -> int:
+    """Find the passer's teammate from a player id, a shirt number or a label like "#6 Ben Bjorn"."""
+    passer = m.event(pass_id)["player"]
+    team = m.team_of(passer)
+    mates = [p for p in m.players if p["team"] == team and p["pid"] != passer]
+    text = str(ref).strip()
+    for p in mates:
+        if text == m.label(p["pid"]) or text.lower() == p["name"].lower():
+            return p["pid"]
+    digits = text.lstrip("#").split()[0] if text.lstrip("#") else ""
+    if digits.isdigit():
+        n = int(digits)
+        by_jersey = [p["pid"] for p in mates if p["jersey"] == n]
+        if text.startswith("#") and by_jersey:
+            return by_jersey[0]
+        if any(p["pid"] == n for p in mates):
+            return n
+        if by_jersey:
+            return by_jersey[0]
+    raise ValueError(f"{ref!r} is not a teammate of {m.label(passer)}; use one of: "
+                     + ", ".join(m.label(p["pid"]) for p in mates))
+
+
 def offside_check(m: Match, pass_id: int, teammate: int) -> dict:
     e = m.event(pass_id)
     off = offside(m, e["player"], teammate, e["frame"])
