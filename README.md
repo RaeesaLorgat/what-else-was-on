@@ -25,6 +25,7 @@ Built for the Microsoft x Premier League **Inside the Game: Developer Hackathon*
 - Day 5: the Analyst agent (Microsoft Agent Framework on a Foundry model) that calls those tools and returns an evidence-backed verdict as JSON.
 - Day 5b: offside (in the generator and the tools) and a completion probability (xP) for every option.
 - Day 5c: passes are judged with Karun Singh's public expected threat (xT) grid, downloaded separately.
+- Day 6: the Checker and Narrator agents, wired to the Analyst as a Microsoft Agent Framework workflow.
 
 ## Football tools and the Analyst agent
 
@@ -41,6 +42,28 @@ What the numbers mean:
 - **Threat** is expected threat (xT): the chance a move ends in a goal soon if the ball is at that spot. The tools use [Karun Singh's public 12 x 8 xT grid](https://karun.in/blog/expected-threat.html), learned from a season of Premier League event data, with bilinear interpolation between cells. The grid is Karun Singh's work and is not included in this repo; download it once with `python scripts/get_xt_grid.py`. Without it, the tools fall back to a hand-made xT-style map. The match generator always uses the hand-made map to decide where its players pass, so the judge (Karun's grid) is independent of the rule the simulated players follow.
 - **xP** is the chance a pass is completed, from how much time the ball has to spare over the quickest defender. It is a logistic curve fitted on 4,851 passes from synthetic matches 1-3 (`scripts/fit_xp.py`, AUC 0.69).
 - **Offside**: the receiver is in the opponents' half, ahead of the ball and ahead of the second-last opponent at the moment of the pass.
+
+## The agent team (Day 6)
+
+```bash
+python scripts/run_pipeline.py --seed 1 --pass 797            # one pass through the whole team
+python scripts/run_pipeline.py --seed 1 --top 3 --recap       # the 3 biggest misses, plus a post-match recap
+python scripts/run_pipeline.py --seed 1 --top 3 --mock        # same, with a local stand-in model (no Azure)
+```
+
+The three agents run as a Microsoft Agent Framework workflow (`src/whatelse/pipeline.py`):
+
+```
+pass id --> Analyst --> Checker --approved--> Narrator <--> Checker --> commentary + pundit line
+               ^           |
+               +-rejected--+   (the Checker's problems go back to the Analyst, at most 3 drafts)
+```
+
+- **Analyst** calls the football tools and writes a verdict with its evidence.
+- **Checker** never trusts the Analyst. It calls `verify_verdict`, plain code that recomputes the pass and compares every number and label, and then reads the wording: a better option that was never played must be described with "would have", and a pass that would only just have beaten the defender (under 0.3 s to spare) must be called tight. A verdict is approved only if the code and the Checker both find no problems.
+- **Narrator** writes a live commentary line and a pundit line from the approved verdict, and a post-match recap from several. Its words are checked too, the same way: any number that is not in the verdict, or any claim the verdict does not support (for example calling the better option "safer"), sends it back to the Narrator with the Checker's problems.
+
+If the agents cannot agree after 3 drafts, the pipeline uses a plain verdict written straight from the tools and marks the story "fallback", so nothing unchecked reaches the screen. Every story keeps a trail of what each agent did, saved to `data/stories_<seed>.json`.
 
 ## The synthetic match generator
 
