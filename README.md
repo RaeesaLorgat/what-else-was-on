@@ -63,6 +63,8 @@ pass id --> Analyst --> Checker --approved--> Narrator <--> Checker --> commenta
 - **Checker** never trusts the Analyst. It calls `verify_verdict`, plain code that recomputes the pass and compares every number and label, and then reads the wording: a better option that was never played must be described with "would have", and a pass that would only just have beaten the defender (under 0.3 s to spare) must be called tight. A verdict is approved only if the code and the Checker both find no problems.
 - **Narrator** writes a live commentary line and a pundit line from the approved verdict, and a post-match recap from several. Its words are checked too, the same way: any number that is not in the verdict, or any claim the verdict does not support (for example calling the better option "safer"), sends it back to the Narrator with the Checker's problems.
 
+The Checker can run on a stronger model than the other agents: set `AZURE_OPENAI_CHECKER_MODEL` in `.env` to a second deployment (for example gpt-4.1). Judging wording is the hardest job in the team, and the Checker only reads a few short verdicts per match, so this costs little.
+
 If the agents cannot agree after 3 drafts, the pipeline uses a plain verdict written straight from the tools and marks the story "fallback", so nothing unchecked reaches the screen. Every story keeps a trail of what each agent did, saved to `data/stories_<seed>.json`.
 
 ## The synthetic match generator

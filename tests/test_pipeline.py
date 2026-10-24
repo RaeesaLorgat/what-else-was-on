@@ -131,3 +131,16 @@ def test_real_problems_drops_fine_items():
     items = ["Calling the 12:42 pass tight is correct (OK)", "'doubled the threat' is not supported",
              "wording 'tight chance' is ambiguous; acceptable"]
     assert real_problems(items) == ["'doubled the threat' is not supported"]
+
+
+def test_checker_model_setting(monkeypatch):
+    from whatelse import llm
+    from whatelse.llm import load_settings
+    monkeypatch.setattr(llm, "load_dotenv", lambda *a, **k: None)     # ignore your real .env here
+    monkeypatch.setenv("AZURE_OPENAI_ENDPOINT", "https://x.services.ai.azure.com")
+    monkeypatch.setenv("AZURE_OPENAI_API_KEY", "k")
+    monkeypatch.setenv("AZURE_OPENAI_MODEL", "gpt-4.1-mini")
+    monkeypatch.delenv("AZURE_OPENAI_CHECKER_MODEL", raising=False)
+    assert load_settings().checker_model == "gpt-4.1-mini"
+    monkeypatch.setenv("AZURE_OPENAI_CHECKER_MODEL", "gpt-4.1")
+    assert load_settings().checker_model == "gpt-4.1"

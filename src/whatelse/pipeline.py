@@ -150,9 +150,10 @@ async def checked_copy(writer, checker, verdicts: list[dict], first_prompt: str,
 
 
 class NarratorStep(Executor):
-    def __init__(self, m: Match, client):
+    def __init__(self, m: Match, client, checker_client=None):
         super().__init__(id="narrator")
-        self.m, self.agent, self.checker = m, make_narrator(client), make_copy_checker(client)
+        self.m, self.agent = m, make_narrator(client)
+        self.checker = make_copy_checker(checker_client or client)
 
     @handler
     async def narrate(self, r: Review, ctx: WorkflowContext[Never, dict]) -> None:
@@ -184,9 +185,15 @@ def plain_copy(v: dict) -> dict:
                       f"that pass comes off.{tight}"}
 
 
-def build_workflow(m: Match, client=None):
-    client = client or make_client()
-    analyst, checker, narrator = AnalystStep(m, client), CheckerStep(m, client), NarratorStep(m, client)
+def build_workflow(m: Match, client=None, checker_client=None):
+    """client runs the Analyst and Narrator; checker_client runs the Checker (a stronger model if configured).
+    If only client is given (e.g. the test stand-in), it runs everything."""
+    if client is None:
+        client, checker_client = make_client(), checker_client or make_client("checker")
+    checker_client = checker_client or client
+    analyst = AnalystStep(m, client)
+    checker = CheckerStep(m, checker_client)
+    narrator = NarratorStep(m, client, checker_client)
     return (WorkflowBuilder(start_executor=analyst, name="what-else-was-on")
             .add_edge(analyst, checker)
             .add_edge(checker, narrator, condition=lambda r: r.route == "narrator")
@@ -194,9 +201,9 @@ def build_workflow(m: Match, client=None):
             .build())
 
 
-async def run_pass(m: Match, pass_id: int, client=None) -> dict:
+async def run_pass(m: Match, pass_id: int, client=None, checker_client=None) -> dict:
     """Analyst -> Checker (-> Analyst ...) -> Narrator for one pass. Returns the story with its full trail."""
-    wf = build_workflow(m, client)
+    wf = build_workflow(m, client, checker_client)
     res = await wf.run(PassJob(pass_id))
     outs = res.get_outputs()
     if not outs:
@@ -204,15 +211,17 @@ async def run_pass(m: Match, pass_id: int, client=None) -> dict:
     return outs[-1]
 
 
-async def write_recap(stories: list[dict], client=None) -> dict:
+async def write_recap(stories: list[dict], client=None, checker_client=None) -> dict:
     """Post-match recap from several approved stories, checked like everything else.
     Returns {"recap": text, "trail": [...]}."""
     verdicts = [s["verdict"] for s in stories if s["verdict"].get("verdict") == "missed_better_option"]
     if not verdicts:
         return {"recap": "No clear missed passes in this match.", "trail": []}
-    client = client or make_client()
+    if client is None:
+        client, checker_client = make_client(), checker_client or make_client("checker")
+    checker_client = checker_client or client
     trail: list = []
-    out = await checked_copy(make_recap_writer(client), make_copy_checker(client), verdicts,
+    out = await checked_copy(make_recap_writer(client), make_copy_checker(checker_client), verdicts,
                              "Approved verdicts:\n" + json.dumps(verdicts) + "\n\nWhat the numbers mean:\n" +
                              "\n\n".join(plain_facts(v) for v in verdicts), ("recap",), trail)
     if out is None:

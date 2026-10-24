@@ -17,6 +17,7 @@ class FoundrySettings:
     endpoint: str
     api_key: str
     model: str
+    checker_model: str = ""      # optional stronger deployment for the Checker; empty = same as model
 
     @property
     def base_url(self) -> str:
@@ -38,8 +39,11 @@ def load_settings() -> FoundrySettings:
     for suffix in ("/openai/v1/", "/openai/v1", "/openai/", "/openai"):
         if endpoint.endswith(suffix):
             endpoint = endpoint[: -len(suffix)]
+    checker = os.getenv("AZURE_OPENAI_CHECKER_MODEL", "").strip()
+    if "<" in checker:
+        checker = ""
     return FoundrySettings(endpoint=endpoint, api_key=os.environ["AZURE_OPENAI_API_KEY"],
-                           model=os.environ["AZURE_OPENAI_MODEL"])
+                           model=os.environ["AZURE_OPENAI_MODEL"], checker_model=checker or os.environ["AZURE_OPENAI_MODEL"])
 
 
 def make_client(settings: FoundrySettings):

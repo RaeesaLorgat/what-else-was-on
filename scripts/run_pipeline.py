@@ -64,6 +64,10 @@ async def main() -> None:
         from agent_framework.openai import OpenAIChatCompletionClient
         _, url = mock_model.start()
         client = OpenAIChatCompletionClient(model="mock", api_key="mock", base_url=url)
+    if not a.mock:
+        from whatelse.llm import load_settings
+        st = load_settings()
+        print(f"Models: Analyst and Narrator = {st.model}, Checker = {st.checker_model}")
     m = get_match(a.seed, a.data)
     ids = [a.pass_id] if a.pass_id is not None else [r["pass_id"] for r in find_missed_passes(m, limit=a.top)]
 

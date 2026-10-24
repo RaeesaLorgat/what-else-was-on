@@ -133,10 +133,12 @@ Rules:
 Reply with ONLY a JSON object: {"recap": "<text>"}"""
 
 
-def make_client():
-    """Agent Framework chat client pointed at the Foundry deployment from .env."""
+def make_client(role: str = "default"):
+    """Agent Framework chat client pointed at the Foundry deployment from .env.
+    role="checker" uses AZURE_OPENAI_CHECKER_MODEL if it is set (a stronger model for the Checker)."""
     s = load_settings()
-    return OpenAIChatCompletionClient(model=s.model, api_key=s.api_key, base_url=s.base_url)
+    model = s.checker_model if role == "checker" else s.model
+    return OpenAIChatCompletionClient(model=model, api_key=s.api_key, base_url=s.base_url)
 
 
 def make_tools(m: Match) -> list:
