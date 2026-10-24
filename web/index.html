@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>What Else Was On</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <div>
+        <h1>What Else Was On</h1>
+        <p class="sub">Every pass, and the one that was not played</p>
+      </div>
+    </div>
+    <div class="scoreboard" id="scoreboard" aria-live="polite"></div>
+    <label class="match-pick">
+      <span>Match</span>
+      <select id="matchSelect" aria-label="Choose a match"></select>
+    </label>
+  </header>
+
+  <main class="layout">
+    <aside class="moments" aria-label="Key moments">
+      <h2>Key moments</h2>
+      <p class="hint">Passes where a teammate in view, onside and reachable was worth more.</p>
+      <ol id="momentList" class="moment-list"></ol>
+      <section class="recap" id="recapBox" hidden>
+        <h3>Post-match recap</h3>
+        <p id="recapText"></p>
+      </section>
+    </aside>
+
+    <section class="stage" aria-label="Replay">
+      <div class="moment-head" id="momentHead"></div>
+      <div class="pitch-wrap">
+        <canvas id="pitch" aria-label="Pitch replay"></canvas>
+        <div class="overlay-note" id="overlayNote" hidden></div>
+      </div>
+      <div class="controls">
+        <button id="playBtn" class="btn primary" aria-label="Play or pause">Play</button>
+        <button id="restartBtn" class="btn" aria-label="Back to the start of the clip">Restart</button>
+        <input id="scrub" type="range" min="0" max="100" value="0" step="0.1" aria-label="Clip position">
+        <span id="clock" class="clock">0:00</span>
+        <select id="speed" aria-label="Playback speed">
+          <option value="0.5">0.5x</option>
+          <option value="1" selected>1x</option>
+          <option value="2">2x</option>
+        </select>
+        <button id="zoomBtn" class="btn" aria-label="Switch between following the ball and the whole pitch">Whole pitch</button>
+      </div>
+      <div class="controls second">
+        <button id="ghostBtn" class="btn accent" disabled>Play what else was on</button>
+        <button id="continueBtn" class="btn" disabled>Continue the match</button>
+        <div class="legend">
+          <span><i class="dot t0"></i><b id="legendT0">Team A</b></span>
+          <span><i class="dot t1"></i><b id="legendT1">Team B</b></span>
+          <span><i class="line played"></i>pass played</span>
+          <span><i class="line better"></i>what else was on</span>
+          <span><i class="ring"></i>quickest defender</span>
+        </div>
+      </div>
+    </section>
+
+    <aside class="story" aria-label="The agents' verdict">
+      <div id="storyBox"></div>
+    </aside>
+  </main>
+
+  <footer class="foot">
+    All matches, teams and players are synthetic. Threat: <span id="threatModel"></span>.
+  </footer>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

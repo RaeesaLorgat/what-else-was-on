@@ -221,6 +221,10 @@ def arrival(m: Match, passer: int, target: int, frame: int) -> dict:
     res = {"arrives": cut is None, "ball_time_s": round(L / BALL_SPEED, 2),
            "closest_call_s": round(spare, 2), "closest_defender": m.label(who) if who is not None else None,
            "xp_pct": round(100 * completion_probability(spare))}
+    if who is not None:      # where on the ball's path the quickest defender comes closest (for drawing)
+        pt = start + (aim - start) * where / max(L, 1e-6)
+        res.update({"closest_defender_id": who, "closest_point": [round(float(pt[0]), 2), round(float(pt[1]), 2)],
+                    "closest_point_after_m": round(where, 1)})
     if cut:
         res.update({"cut_out_by": m.label(cut[0]), "cut_out_after_m": round(cut[1])})
     res["close_call"] = abs(spare) < 0.3

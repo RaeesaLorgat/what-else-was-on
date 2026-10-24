@@ -26,6 +26,7 @@ Built for the Microsoft x Premier League **Inside the Game: Developer Hackathon*
 - Day 5b: offside (in the generator and the tools) and a completion probability (xP) for every option.
 - Day 5c: passes are judged with Karun Singh's public expected threat (xT) grid, downloaded separately.
 - Day 6: the Checker and Narrator agents, wired to the Analyst as a Microsoft Agent Framework workflow.
+- Day 7: the replay page (FastAPI backend and a canvas pitch).
 
 ## Football tools and the Analyst agent
 
@@ -66,6 +67,16 @@ pass id --> Analyst --> Checker --approved--> Narrator <--> Checker --> commenta
 The Checker can run on a stronger model than the other agents: set `AZURE_OPENAI_CHECKER_MODEL` in `.env` to a second deployment (for example gpt-4.1). Judging wording is the hardest job in the team, and the Checker only reads a few short verdicts per match, so this costs little.
 
 If the agents cannot agree after 3 drafts, the pipeline uses a plain verdict written straight from the tools and marks the story "fallback", so nothing unchecked reaches the screen. Every story keeps a trail of what each agent did, saved to `data/stories_<seed>.json`.
+
+## The replay page (Day 7)
+
+```bash
+python scripts/serve.py          # then open http://localhost:8000
+```
+
+Pick a key moment on the left. The clip plays and stops at the moment of the pass, showing the passer's 120 degree vision cone, the pass played (white arrow) and what else was on (green dashed arrow), with any offside teammates marked. **Play what else was on** plays the pass that was not made: the ball travels at 12.5 m/s and the quickest defender chases it with the same reaction-and-sprint model the tools use, so you can see how close the call would have been. The right panel shows the agents' commentary, the key numbers, and every step of the Analyst, Checker and Narrator, including rejections. **Run the agents on this pass** runs the team live (needs `.env`) and saves the result to `data/stories_<seed>.json`.
+
+The backend (`src/whatelse/app.py`) is a small FastAPI app: `/api/matches`, `/api/matches/{seed}`, `/api/matches/{seed}/moments/{pass_id}` and a POST to `.../run`.
 
 ## The synthetic match generator
 

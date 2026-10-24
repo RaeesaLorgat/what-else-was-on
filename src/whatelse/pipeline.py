@@ -217,11 +217,17 @@ async def write_recap(stories: list[dict], client=None, checker_client=None) -> 
     verdicts = [s["verdict"] for s in stories if s["verdict"].get("verdict") == "missed_better_option"]
     if not verdicts:
         return {"recap": "No clear missed passes in this match.", "trail": []}
+
+    def clock(v):
+        mm, ss = (str(v.get("time", "0:0")) + ":0").split(":")[:2]
+        return int(mm) * 60 + int(ss)
+    verdicts.sort(key=clock)                  # tell the match in order
     if client is None:
         client, checker_client = make_client(), checker_client or make_client("checker")
     checker_client = checker_client or client
     trail: list = []
-    out = await checked_copy(make_recap_writer(client), make_copy_checker(checker_client), verdicts,
+    # the recap is the longest piece of writing, so it uses the stronger (Checker) model too
+    out = await checked_copy(make_recap_writer(checker_client), make_copy_checker(checker_client), verdicts,
                              "Approved verdicts:\n" + json.dumps(verdicts) + "\n\nWhat the numbers mean:\n" +
                              "\n\n".join(plain_facts(v) for v in verdicts), ("recap",), trail)
     if out is None:
