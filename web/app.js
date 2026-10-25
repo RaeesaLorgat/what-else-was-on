@@ -29,6 +29,7 @@ async function api(path, opts) {
 }
 
 async function init() {
+  try { state.config = await api("/api/config"); } catch (_) { state.config = { live_runs: true, live_runs_left: null }; }
   const list = await api("/api/matches");
   const sel = $("matchSelect");
   sel.innerHTML = "";
@@ -129,8 +130,12 @@ function renderStory(runMsg) {
     const v = s.verdict;
     if (v && v.explanation) html += `<div class="section-title">Analyst's verdict</div><p class="pundit">${esc(v.explanation)}</p>`;
   }
-  html += `<div class="run-row"><button class="btn primary" id="runBtn">${s ? "Run the agents again" : "Run the agents on this pass"}</button>
-           <span class="run-msg" id="runMsg">${runMsg ? esc(runMsg) : ""}</span></div>`;
+  const cfg = state.config || { live_runs: true, live_runs_left: null };
+  const quota = cfg.has_model === false ? "Live runs need a Foundry model (.env); the saved stories are shown." :
+                cfg.live_runs_left == null ? "" : cfg.live_runs ? `${cfg.live_runs_left} live runs left today on this demo.` :
+                "Live runs are used up for today on this demo; the saved stories are shown.";
+  html += `<div class="run-row"><button class="btn primary" id="runBtn" ${cfg.live_runs ? "" : "disabled"}>${s ? "Run the agents again" : "Run the agents on this pass"}</button>
+           <span class="run-msg" id="runMsg">${esc(runMsg || quota)}</span></div>`;
   html += `<details><summary>Every teammate at the moment of the pass</summary>${optionsTable(a.options)}
            <p class="run-msg">${esc(a.rule)}.</p></details>`;
   $("storyBox").innerHTML = html;
@@ -176,8 +181,10 @@ async function runAgents() {
     renderMoments();
     for (const b of document.querySelectorAll("#momentList button"))
       b.setAttribute("aria-current", +b.dataset.pid === story.pass_id ? "true" : "false");
+    try { state.config = await api("/api/config"); } catch (_) {}
     renderStory("Done.");
   } catch (e) {
+    try { state.config = await api("/api/config"); } catch (_) {}
     renderStory(e.message);
   }
 }

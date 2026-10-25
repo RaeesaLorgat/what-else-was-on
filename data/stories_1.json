@@ -1,0 +1,251 @@
+{
+  "seed": 1,
+  "stories": [
+    {
+      "pass_id": 797,
+      "status": "approved",
+      "verdict": {
+        "pass_id": 797,
+        "time": "12:42",
+        "verdict": "missed_better_option",
+        "passer": "#11 Nico Kowal",
+        "pass_played_to": "#7 Mateo Silva",
+        "better_option": "#6 Ben Bjorn",
+        "evidence": {
+          "threat_of_pass_played_pct": 2.2,
+          "better_option_threat_pct": 6.3,
+          "gain_pct": 4.1,
+          "better_option_in_view": true,
+          "better_option_offside": false,
+          "better_option_arrives": true,
+          "better_option_xp_pct": 77,
+          "closest_call_s": 0.14
+        },
+        "explanation": "Nico Kowal passed to Mateo Silva with a 2.2 percent threat. A better option, Ben Bjorn, had a chance of 77% completion and a 6.3 percent threat. The pass would have just beaten the defender, so it would have been tight."
+      },
+      "commentary": "#11 Nico Kowal passed to #7 Mateo Silva at 12:42 with 2.2% threat, missing a better option on #6 Ben Bjorn with 6.3% threat.",
+      "pundit": "The better pass to Ben Bjorn would have had a 77% chance of completion. It was a tight window, beating the defender by just 0.14 seconds.",
+      "drafts": 1,
+      "trail": [
+        {
+          "agent": "Analyst",
+          "draft": 1,
+          "verdict": {
+            "pass_id": 797,
+            "time": "12:42",
+            "verdict": "missed_better_option",
+            "passer": "#11 Nico Kowal",
+            "pass_played_to": "#7 Mateo Silva",
+            "better_option": "#6 Ben Bjorn",
+            "evidence": {
+              "threat_of_pass_played_pct": 2.2,
+              "better_option_threat_pct": 6.3,
+              "gain_pct": 4.1,
+              "better_option_in_view": true,
+              "better_option_offside": false,
+              "better_option_arrives": true,
+              "better_option_xp_pct": 77,
+              "closest_call_s": 0.14
+            },
+            "explanation": "Nico Kowal passed to Mateo Silva with a 2.2 percent threat. A better option, Ben Bjorn, had a chance of 77% completion and a 6.3 percent threat. The pass would have just beaten the defender, so it would have been tight."
+          }
+        },
+        {
+          "agent": "Checker",
+          "draft": 1,
+          "approved": true,
+          "problems": []
+        },
+        {
+          "agent": "Checker",
+          "on": "Narrator",
+          "approved": false,
+          "problems": [
+            "says 'tighter', which the tools do not measure"
+          ]
+        },
+        {
+          "agent": "Checker",
+          "on": "Narrator",
+          "approved": true,
+          "problems": []
+        },
+        {
+          "agent": "Narrator",
+          "commentary": "#11 Nico Kowal passed to #7 Mateo Silva at 12:42 with 2.2% threat, missing a better option on #6 Ben Bjorn with 6.3% threat."
+        }
+      ]
+    },
+    {
+      "pass_id": 4561,
+      "status": "approved",
+      "verdict": {
+        "pass_id": 4561,
+        "time": "75:05",
+        "verdict": "missed_better_option",
+        "passer": "#9 Noah Novak",
+        "pass_played_to": "#4 Milan Mensah",
+        "better_option": "#11 Nico Kowal",
+        "evidence": {
+          "threat_of_pass_played_pct": 1.7,
+          "better_option_threat_pct": 3.3,
+          "gain_pct": 1.6,
+          "better_option_in_view": true,
+          "better_option_offside": false,
+          "better_option_arrives": true,
+          "better_option_xp_pct": 80,
+          "closest_call_s": 0.28
+        },
+        "explanation": "Noah Novak could have passed to Nico Kowal, who offered a much higher chance to create threat with an 80% completion probability. It would have been a tight pass arriving just ahead of the closest defender."
+      },
+      "commentary": "Novak passed to Mensah at 75:05, but he missed a better option to Kowal with an 80% completion chance and higher threat potential.",
+      "pundit": "Noah Novak saw Nico Kowal in a good position, offering almost double the threat. The pass to Kowal would have been tight, arriving just ahead of the nearest defender.",
+      "drafts": 1,
+      "trail": [
+        {
+          "agent": "Analyst",
+          "draft": 1,
+          "verdict": {
+            "pass_id": 4561,
+            "time": "75:05",
+            "verdict": "missed_better_option",
+            "passer": "#9 Noah Novak",
+            "pass_played_to": "#4 Milan Mensah",
+            "better_option": "#11 Nico Kowal",
+            "evidence": {
+              "threat_of_pass_played_pct": 1.7,
+              "better_option_threat_pct": 3.3,
+              "gain_pct": 1.6,
+              "better_option_in_view": true,
+              "better_option_offside": false,
+              "better_option_arrives": true,
+              "better_option_xp_pct": 80,
+              "closest_call_s": 0.28
+            },
+            "explanation": "Noah Novak could have passed to Nico Kowal, who offered a much higher chance to create threat with an 80% completion probability. It would have been a tight pass arriving just ahead of the closest defender."
+          }
+        },
+        {
+          "agent": "Checker",
+          "draft": 1,
+          "approved": true,
+          "problems": []
+        },
+        {
+          "agent": "Checker",
+          "on": "Narrator",
+          "approved": false,
+          "problems": [
+            "'It was a risky but promising option' \u2013 the verdict does not support calling the better option 'risky', only that it would have been tight",
+            "'could have created more threat' \u2013 the verdict only shows greater threat value for the location, not potential outcome or likelihood of creating threat"
+          ]
+        },
+        {
+          "agent": "Checker",
+          "on": "Narrator",
+          "approved": false,
+          "problems": [
+            "says 'higher chance of success', which the tools do not measure",
+            "says 'tighter', which the tools do not measure",
+            "closest_call_s is 0.28 (under 0.3 s): say the pass would have been tight"
+          ]
+        },
+        {
+          "agent": "Checker",
+          "on": "Narrator",
+          "approved": true,
+          "problems": []
+        },
+        {
+          "agent": "Narrator",
+          "commentary": "Novak passed to Mensah at 75:05, but he missed a better option to Kowal with an 80% completion chance and higher threat potential."
+        }
+      ]
+    },
+    {
+      "pass_id": 1604,
+      "status": "approved",
+      "verdict": {
+        "pass_id": 1604,
+        "time": "25:29",
+        "verdict": "missed_better_option",
+        "passer": "#9 Noah Novak",
+        "pass_played_to": "#5 Luca Haddad",
+        "better_option": "#11 Nico Kowal",
+        "evidence": {
+          "threat_of_pass_played_pct": 1.7,
+          "better_option_threat_pct": 3.2,
+          "gain_pct": 1.4,
+          "better_option_in_view": true,
+          "better_option_offside": false,
+          "better_option_arrives": true,
+          "better_option_xp_pct": 82,
+          "closest_call_s": 0.37
+        },
+        "explanation": "Noah Novak played a pass to Luca Haddad with a 1.7% threat. However, a better option was to Nico Kowal, who could have received a pass with an 82% chance of completion and a threat of 3.2%. The pass would have comfortably beaten the nearest defender by 0.37 seconds."
+      },
+      "commentary": "Noah Novak passed to Luca Haddad with a 1.7% threat, missing a better chance on Nico Kowal with a 3.2% threat and 82% completion likelihood.",
+      "pundit": "Novak saw Kowal in a good position and onside. That pass would have had a strong chance of connecting and posed a greater threat than the ball to Haddad.",
+      "drafts": 1,
+      "trail": [
+        {
+          "agent": "Analyst",
+          "draft": 1,
+          "verdict": {
+            "pass_id": 1604,
+            "time": "25:29",
+            "verdict": "missed_better_option",
+            "passer": "#9 Noah Novak",
+            "pass_played_to": "#5 Luca Haddad",
+            "better_option": "#11 Nico Kowal",
+            "evidence": {
+              "threat_of_pass_played_pct": 1.7,
+              "better_option_threat_pct": 3.2,
+              "gain_pct": 1.4,
+              "better_option_in_view": true,
+              "better_option_offside": false,
+              "better_option_arrives": true,
+              "better_option_xp_pct": 82,
+              "closest_call_s": 0.37
+            },
+            "explanation": "Noah Novak played a pass to Luca Haddad with a 1.7% threat. However, a better option was to Nico Kowal, who could have received a pass with an 82% chance of completion and a threat of 3.2%. The pass would have comfortably beaten the nearest defender by 0.37 seconds."
+          }
+        },
+        {
+          "agent": "Checker",
+          "draft": 1,
+          "approved": true,
+          "problems": []
+        },
+        {
+          "agent": "Checker",
+          "on": "Narrator",
+          "approved": true,
+          "problems": []
+        },
+        {
+          "agent": "Narrator",
+          "commentary": "Noah Novak passed to Luca Haddad with a 1.7% threat, missing a better chance on Nico Kowal with a 3.2% threat and 82% completion likelihood."
+        }
+      ]
+    }
+  ],
+  "recap": "At 12:42, Nico Kowal could have chosen Ben Bjorn for a more dangerous option, with 6.3 percent threat, and that pass would have been tight. At 25:29, Noah Novak had Nico Kowal in view with a more dangerous pass on, offering 3.2 percent threat and comfortably beating the defender. Later at 75:05, Novak again could have gone to Kowal for greater threat, and this pass would also have been tight. Each moment showed more dangerous possibilities if the better options had been played.",
+  "recap_trail": [
+    {
+      "agent": "Checker",
+      "on": "Recap",
+      "approved": false,
+      "problems": [
+        "'these choices show how looking for the riskier move can open up bigger possibilities in attack' \u2013 the verdicts do not support that the better passes were riskier, only that they offered higher threat and completion chances",
+        "'Noah Novak had Nico Kowal open for a more threatening option, with a comfortable gap to the nearest defender.' \u2013 only says comfortable gap, not that Kowal was open; verdict does not support describing Kowal as open"
+      ]
+    },
+    {
+      "agent": "Checker",
+      "on": "Recap",
+      "approved": true,
+      "problems": []
+    }
+  ]
+}

@@ -27,6 +27,7 @@ Built for the Microsoft x Premier League **Inside the Game: Developer Hackathon*
 - Day 5c: passes are judged with Karun Singh's public expected threat (xT) grid, downloaded separately.
 - Day 6: the Checker and Narrator agents, wired to the Analyst as a Microsoft Agent Framework workflow.
 - Day 7: the replay page (FastAPI backend and a canvas pitch).
+- Day 8: one container (Dockerfile) deployed to Azure Container Apps, with the Foundry key as a secret and a daily cap on live agent runs.
 
 ## Football tools and the Analyst agent
 
@@ -77,6 +78,19 @@ python scripts/serve.py          # then open http://localhost:8000
 Pick a key moment on the left. The clip plays and stops at the moment of the pass, showing the passer's 120 degree vision cone, the pass played (white arrow) and what else was on (green dashed arrow), with any offside teammates marked. **Play what else was on** plays the pass that was not made: the ball travels at 12.5 m/s and the quickest defender chases it with the same reaction-and-sprint model the tools use, so you can see how close the call would have been. The right panel shows the agents' commentary, the key numbers, and every step of the Analyst, Checker and Narrator, including rejections. **Run the agents on this pass** runs the team live (needs `.env`) and saves the result to `data/stories_<seed>.json`.
 
 The backend (`src/whatelse/app.py`) is a small FastAPI app: `/api/matches`, `/api/matches/{seed}`, `/api/matches/{seed}/moments/{pass_id}` and a POST to `.../run`.
+
+## Running it in the cloud (Day 8)
+
+The whole app (replay page, API and agents) is one container: see the `Dockerfile` and
+[docs/DEPLOY.md](docs/DEPLOY.md). On every push, GitHub Actions runs the tests and publishes the
+image to GitHub Container Registry; Azure Container Apps runs it. The Foundry key is stored as a
+Container Apps secret, and `WHATELSE_LIVE_RUNS` caps how many live agent runs the public page may
+start per day (saved stories are always shown).
+
+```bash
+docker build -t whatelse .
+docker run -p 8000:8000 --env-file .env whatelse      # the same container on your own machine
+```
 
 ## The synthetic match generator
 

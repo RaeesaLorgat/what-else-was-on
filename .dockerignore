@@ -1,0 +1,14 @@
+# Never send secrets or local clutter into the image
+.env
+*.env
+.git
+.venv
+venv
+**/__pycache__
+**/*.pyc
+.pytest_cache
+.vscode
+.idea
+data/*.png
+tests
+docs

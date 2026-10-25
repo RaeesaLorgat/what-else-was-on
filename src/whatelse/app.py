@@ -11,11 +11,16 @@ API
 
 Stories made by scripts/run_pipeline.py (data/stories_<seed>.json) are shown straight away;
 running the agents from the page adds to that file.
+
+WHATELSE_LIVE_RUNS limits how many live agent runs the page may start per day (each one costs
+model tokens). Unset = no limit (your own machine); 0 = live runs off; the container sets 20.
+Only one live run happens at a time.
 """
 
 from __future__ import annotations
 
 import asyncio
+import datetime as dt
 import json
 import os
 from pathlib import Path
@@ -37,7 +42,23 @@ BEFORE_S, AFTER_S = 5.0, 4.0           # clip length around the pass
 TOP_MOMENTS = 10
 
 app = FastAPI(title="What Else Was On", description="Replay of synthetic matches with the agents' verdicts")
-_locks: dict[int, asyncio.Lock] = {}
+_run_lock = asyncio.Lock()
+_runs = {"day": None, "count": 0}
+
+
+def live_runs_left() -> int | None:
+    """None = no limit. Counts reset every day (UTC)."""
+    raw = os.environ.get("WHATELSE_LIVE_RUNS", "").strip()
+    if not raw:
+        return None
+    try:
+        limit = max(0, int(raw))
+    except ValueError:
+        return None
+    today = dt.datetime.now(dt.timezone.utc).date()
+    if _runs["day"] != today:
+        _runs.update(day=today, count=0)
+    return max(0, limit - _runs["count"])
 
 
 def _seeds() -> list[int]:
@@ -70,6 +91,18 @@ def _stories(seed: int) -> dict:
 
 def _story_for(seed: int, pass_id: int) -> dict | None:
     return next((s for s in _stories(seed).get("stories", []) if s.get("pass_id") == pass_id), None)
+
+
+@app.get("/api/config")
+def config() -> dict:
+    left = live_runs_left()
+    try:
+        from .llm import load_settings
+        load_settings()
+        has_model = True
+    except RuntimeError:
+        has_model = False
+    return {"live_runs_left": left, "live_runs": has_model and (left is None or left > 0), "has_model": has_model}
 
 
 @app.get("/api/matches")
@@ -158,9 +191,19 @@ async def run_agents(seed: int, pass_id: int) -> dict:
         raise HTTPException(503, f"The agents need a Foundry model: {e}")
     from .pipeline import run_pass
 
-    lock = _locks.setdefault(seed, asyncio.Lock())
-    story = await run_pass(m, pass_id)
-    async with lock:
+    left = live_runs_left()
+    if left is not None and left <= 0:
+        raise HTTPException(429, "Live agent runs are switched off or used up for today on this demo. "
+                                 "The saved stories are still here; run it on your own machine for more.")
+    if _run_lock.locked():
+        raise HTTPException(429, "The agents are already working on another pass. Try again in a minute.")
+    async with _run_lock:
+        if left is not None:
+            _runs["count"] += 1
+        try:
+            story = await run_pass(m, pass_id)
+        except Exception as e:     # a model or network error should not crash the page
+            raise HTTPException(502, f"The agents could not finish: {type(e).__name__}: {e}")
         data = _stories(seed)
         data["stories"] = [s for s in data.get("stories", []) if s.get("pass_id") != pass_id] + [story]
         (DATA / f"stories_{seed}.json").write_text(json.dumps(data, indent=2))

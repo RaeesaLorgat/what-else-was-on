@@ -70,3 +70,15 @@ def test_page_is_served(client):
     r = c.get("/")
     assert r.status_code == 200 and "What Else Was On" in r.text
     assert c.get("/static/app.js").status_code == 200
+
+
+def test_live_runs_can_be_limited(client, monkeypatch):
+    c, _ = client
+    import whatelse.llm as llm
+    monkeypatch.setattr(llm, "load_settings", lambda: None)
+    monkeypatch.setenv("WHATELSE_LIVE_RUNS", "0")
+    assert c.get("/api/config").json()["live_runs"] is False
+    pid = c.get("/api/matches/5").json()["moments"][0]["pass_id"]
+    assert c.post(f"/api/matches/5/moments/{pid}/run").status_code == 429
+    monkeypatch.setenv("WHATELSE_LIVE_RUNS", "5")
+    assert c.get("/api/config").json()["live_runs_left"] == 5
