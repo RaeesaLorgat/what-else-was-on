@@ -1,6 +1,6 @@
-# Setup: Azure, Foundry and this repo (Day 1)
+# Setup: Azure, Foundry and this repo
 
-Goal for today: a model deployed in Microsoft Foundry answers a test prompt and calls a tool.
+Goal: a model deployed in Microsoft Foundry answers a test prompt and calls a tool.
 About 45 to 60 minutes. Do the steps in order.
 
 ## 1. Azure for Students (about 10 min)
@@ -75,7 +75,7 @@ Common errors:
 
 ## 4. GitHub (about 10 min)
 
-1. In the terminal, make the first commit (this is your Day 1 timestamp). The two `git config` lines set your **personal** name and email for this repo only; your other repos keep your student identity:
+1. In the terminal, make the first commit. The two `git config` lines set your **personal** name and email for this repo only; your other repos keep your student identity:
 
 ```bash
 git init -b main
@@ -84,7 +84,7 @@ git config user.email "<the email on your personal GitHub account>"
 git config user.email   # check it prints your personal email
 git add .
 git status        # check .env and .venv are NOT listed
-git commit -m "Day 1: project setup and Foundry connection check"
+git commit -m "Project setup and Foundry connection check"
 ```
 
 2. Signed in to your **personal** GitHub account, create a **new public repository** called `what-else-was-on` with **no** README or licence (this folder already has them).

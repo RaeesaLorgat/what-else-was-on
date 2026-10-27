@@ -1,4 +1,4 @@
-"""Day 1 check: can we reach the model in Foundry, and can it call a tool?
+"""Connection check: can we reach the model in Foundry, and can it call a tool?
 
 Usage:
     python scripts/smoke_test.py          # real call to your Foundry deployment
