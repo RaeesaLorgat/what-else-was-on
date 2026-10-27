@@ -4,6 +4,7 @@
 
 A team of AI agents watches a football match and, for every pass, asks: *what else was on?* It works out which teammates the passer could actually see, finds a better option they skipped, checks that the pass would really have arrived, and turns the best moments into broadcast commentary that has been fact-checked against the numbers.
 
+**Demo Video:** https://youtu.be/X6NDYfazrmY
 **Live demo:** https://whatelse.proudbeach-cfbbc1d8.southafricanorth.azurecontainerapps.io/
 (if nobody has used it for a while, the first load takes about 20 to 30 seconds to wake up)
 
